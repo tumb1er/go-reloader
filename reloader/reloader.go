@@ -1,6 +1,7 @@
 package reloader
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -122,7 +123,7 @@ func (r *Reloader) Sleep() {
 // StartChild starts new child process.
 func (r *Reloader) StartChild() (*exec.Cmd, error) {
 	var err error
-	if r.cmd, err = NewExecutable(filepath.Base(r.cmd.Path)); err != nil {
+	if r.cmd, err = NewExecutable(r.cmd.Path); err != nil {
 		return nil, err
 	}
 	child := exec.Command(r.cmd.Path, r.args...)
@@ -179,7 +180,18 @@ func (r *Reloader) WaitTerm(c chan os.Signal) {
 
 	r.logger.Print("terminating reloader...")
 	if err := r.TerminateChild(); err != nil {
-		panic(err)
+		if err, ok := err.(*os.SyscallError); !ok {
+			panic(err)
+		} else {
+			if err, ok := err.Err.(syscall.Errno); !ok {
+				panic(err)
+			} else {
+				if err.Error() != "Access is denied." {
+					panic(err)
+				}
+				fmt.Printf("Warn: Access is denied.")
+			}
+		}
 	}
 	r.running = false
 }

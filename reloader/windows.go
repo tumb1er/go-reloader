@@ -5,6 +5,7 @@ package reloader
 import (
 	"errors"
 	"github.com/judwhite/go-svc/svc"
+	"os"
 	"sync"
 	"syscall"
 )
@@ -50,4 +51,11 @@ func (s service) Init(env svc.Environment) error {
 func (r *Reloader) Daemonize() error {
 	s := service{r: r}
 	return svc.Run(s, syscall.SIGTERM, syscall.SIGINT)
+}
+
+// SetExecutable is a stub of settings executable bit for a file in tmp directory.
+// OS Windows does not need any file attributes to execute any file as exe.
+//noinspection GoUnusedParameter
+func SetExecutable(tmp *os.File) error {
+	return nil
 }

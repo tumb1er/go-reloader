@@ -26,6 +26,8 @@ $> reloader
   --stderr /tmp/child.err.log
   # downloaded updates location
   --staging /tmp/updates
+  # copy child executable to temporary dir (usefull if executable is running under non-priviledged user)
+  --tmp
   # child executable and it's args
   ./sleep arg
 ```
