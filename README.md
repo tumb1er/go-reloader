@@ -4,7 +4,7 @@ go-reloader
 Go-reloader is a command-line tool to restart running application or service after downloading updates.
 
 After downloading a software update, you need to apply it. What if target application is still running? 
-On Windows, you even can't replace executable binary for future restarts. So, you need an instrument for replacing 
+On Windows, you even can't replace executable binary before it exits. So, you need an instrument for replacing 
 binary and it shouldn't be called from current process.
 
 Go-reloader proposes to run separate executable to watch for update and automatically restart a child process, which is 
