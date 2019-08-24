@@ -47,7 +47,7 @@ func (r *Reloader) Run() error {
 		return err
 	}
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt)
 
 	go r.WaitTerm(c)
 

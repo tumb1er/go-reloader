@@ -83,7 +83,6 @@ func watch(c *cli.Context) error {
 
 func copyToTemp(child string) (string, error) {
 	parts := strings.SplitN(filepath.Base(child), ".", 2)
-	fmt.Println(1)
 	basename := parts[0]
 	if len(parts) > 1 {
 		basename = fmt.Sprintf("%s.*.%s", parts[0], parts[1])
@@ -95,22 +94,18 @@ func copyToTemp(child string) (string, error) {
 		return "", err
 	}
 	defer reloader.CloseFile(tmp)
-	fmt.Println(2)
 	r, err := os.Open(child)
 	if err != nil {
 		return "", err
 	}
 	defer reloader.CloseFile(r)
-	fmt.Println(3)
 	if _, err := io.Copy(tmp, r); err != nil {
 		return "", err
 	}
 	if err := reloader.SetExecutable(tmp); err != nil {
 		return "", err
 	}
-	fmt.Println(4)
 	child = tmp.Name()
-	fmt.Println(child)
 	return child, nil
 }
 
