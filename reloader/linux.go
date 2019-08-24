@@ -1,10 +1,12 @@
 // +build linux
 
 package reloader
+
 import (
 	"github.com/sevlyar/go-daemon"
 )
 
+// Daemonize detaches console application from terminal, making reloader a daemon.
 func (r *Reloader) Daemonize() error {
 	ctx := daemon.Context{}
 	d, err := ctx.Reborn()
@@ -15,7 +17,7 @@ func (r *Reloader) Daemonize() error {
 		return nil
 	}
 	defer func() {
-		if err := ctx.Release();err != nil {
+		if err := ctx.Release(); err != nil {
 			panic(err)
 		}
 	}()

@@ -9,12 +9,14 @@ import (
 	"syscall"
 )
 
-type Service struct {
-	r *Reloader
+// service is an implementation of svc.service interface for running reloader as Windows service.
+type service struct {
+	r  *Reloader
 	wg sync.WaitGroup
 }
 
-func (s Service) Start() error {
+// Start starts reloader loop in separate goroutine and adds it to a wait group.
+func (s service) Start() error {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
@@ -25,7 +27,8 @@ func (s Service) Start() error {
 	return nil
 }
 
-func (s Service) Stop() error {
+// Stops marks reloader as not running and terminates reloader child process.
+func (s service) Stop() error {
 	s.r.running = false
 	if err := s.r.TerminateChild(); err != nil {
 		s.r.logger.Fatal(err)
@@ -35,16 +38,16 @@ func (s Service) Stop() error {
 	return nil
 }
 
-func (s Service) Init(env svc.Environment) error {
+// Init checks whether current process is started with Service Control Manager.
+func (s service) Init(env svc.Environment) error {
 	if !env.IsWindowsService() {
 		return errors.New("not a windows service")
 	}
 	return nil
 }
 
-
+// Daemonize makes a Windows service from current process.
 func (r *Reloader) Daemonize() error {
-	s := Service{r: r}
+	s := service{r: r}
 	return svc.Run(s, syscall.SIGTERM, syscall.SIGINT)
 }
-

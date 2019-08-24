@@ -11,18 +11,27 @@ import (
 	"time"
 )
 
+// Reloader watches, updates and restarts an executable.
 type Reloader struct {
-	self       *Executable
-	cmd        *Executable
+	// link to reloader binary itself
+	self *Executable
+	// link to child executable binary
+	cmd *Executable
+	// path to reloader binary
 	executable string
-	child      *exec.Cmd
-	args       []string
-	staging    string
-	interval   time.Duration
-	logger     *log.Logger
-	running    bool
-	stderr     io.Writer
-	stdout     io.Writer
+	// child process handler
+	child *exec.Cmd
+	// child process args
+	args []string
+	// path to staging directory
+	staging string
+	// update check interval
+	interval time.Duration
+	logger   *log.Logger
+	// mainloop running flag
+	running bool
+	stderr  io.Writer
+	stdout  io.Writer
 }
 
 func (r *Reloader) Run() error {
@@ -41,11 +50,7 @@ func (r *Reloader) Run() error {
 
 	go r.WaitTerm(c)
 
-	for {
-		if !r.running {
-			r.logger.Print("exit")
-			return nil
-		}
+	for r.running {
 		r.Sleep()
 
 		// checking reloader itself
@@ -67,10 +72,8 @@ func (r *Reloader) Run() error {
 				continue
 			}
 		} else {
-			if err != nil {
-				r.logger.Printf("child check error: %v", err)
-				return err
-			}
+			r.logger.Printf("child check error: %v", err)
+			return err
 		}
 
 		// stopping child process
@@ -93,8 +96,11 @@ func (r *Reloader) Run() error {
 		}
 		r.logger.Print("cmd started")
 	}
+	r.logger.Print("exit")
+	return nil
 }
 
+// TerminateChild stops child process and waits for process exit
 func (r *Reloader) TerminateChild() error {
 	if err := r.child.Process.Kill(); err != nil {
 		return err
@@ -105,6 +111,7 @@ func (r *Reloader) TerminateChild() error {
 	return nil
 }
 
+// Sleep waits for check interval with periodic checks of running flag
 func (r *Reloader) Sleep() {
 	iterations := int(r.interval.Seconds())
 	for i := 0; i < iterations && r.running; i++ {
@@ -112,6 +119,7 @@ func (r *Reloader) Sleep() {
 	}
 }
 
+// StartChild starts new child process.
 func (r *Reloader) StartChild() (*exec.Cmd, error) {
 	var err error
 	if r.cmd, err = NewExecutable(filepath.Base(r.cmd.Path)); err != nil {
@@ -126,6 +134,7 @@ func (r *Reloader) StartChild() (*exec.Cmd, error) {
 	return child, nil
 }
 
+// SetStaging configures updates directory path.
 func (r *Reloader) SetStaging(staging string) error {
 	var err error
 	if r.staging, err = filepath.Abs(staging); err != nil {
@@ -134,10 +143,12 @@ func (r *Reloader) SetStaging(staging string) error {
 	return nil
 }
 
+// SetInterval configures update check interval.
 func (r *Reloader) SetInterval(interval time.Duration) {
 	r.interval = interval
 }
 
+// SetChild configures child cmd and arguments.
 func (r *Reloader) SetChild(child string, args ...string) error {
 	var err error
 	if r.cmd, err = NewExecutable(child); err != nil {
@@ -147,36 +158,39 @@ func (r *Reloader) SetChild(child string, args ...string) error {
 	return nil
 }
 
+// SetLogger configures reloader logger.
 func (r *Reloader) SetLogger(logger *log.Logger) {
 	r.logger = logger
 }
 
+// SetStdout configures child process stdout redirection.
 func (r *Reloader) SetStdout(s io.Writer) {
 	r.stdout = s
 }
 
+// SetStderr configures child process stderr redirection.
 func (r *Reloader) SetStderr(s io.Writer) {
 	r.stderr = s
 }
 
+// WaitTerm is a process termination handler.
 func (r *Reloader) WaitTerm(c chan os.Signal) {
 	<-c
-	if err := r.child.Process.Signal(syscall.SIGTERM); err != nil {
-		panic(err)
-	}
-	if _, err := r.child.Process.Wait(); err != nil {
-		panic(err)
-	}
+
 	r.logger.Print("terminating reloader...")
+	if err := r.TerminateChild(); err != nil {
+		panic(err)
+	}
 	r.running = false
 }
 
+// NewReloader returns a new Reloader instance with default configuration.
 func NewReloader(executable string) *Reloader {
 	return &Reloader{
 		executable: executable,
 		staging:    "staging",
 		interval:   time.Minute,
-		logger:     log.New(os.Stderr, "", 0),
+		logger:     log.New(os.Stderr, "", log.LstdFlags),
 		stdout:     os.Stdout,
 		stderr:     os.Stderr,
 	}
