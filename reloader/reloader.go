@@ -112,9 +112,11 @@ func (r *Reloader) TerminateChild() error {
 		killer = r.terminateProcessTree
 	}
 	if err := killer(); err != nil {
+		r.logger.Printf("terminate process: %e", err)
 		return err
 	}
 	if _, err := r.child.Process.Wait(); err != nil {
+		r.logger.Printf("terminate wait: %e", err)
 		return err
 	}
 	return nil
