@@ -94,6 +94,9 @@ func copyToTemp(child string) (string, error) {
 	defer reloader.CloseFile(r)
 
 	dst := filepath.Join(dir, basename)
+	if err := os.Mkdir(dir, 0751); err != nil {
+		return "", err
+	}
 	w, err := os.OpenFile(dst, os.O_WRONLY, 0751)
 	if _, err := io.Copy(w, r); err != nil {
 		return "", err
