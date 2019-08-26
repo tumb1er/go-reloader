@@ -56,14 +56,13 @@ func watch(c *cli.Context) error {
 	if child, err = filepath.Abs(args[0]); err != nil {
 		return err
 	}
-
 	if c.Bool("tmp") {
 		// Copy child executable to temporary file
 		if child, err = copyToTemp(child); err != nil {
 			return err
 		}
 		defer func() {
-			if err := os.RemoveAll(filepath.Base(child)); err != nil {
+			if err := os.RemoveAll(filepath.Dir(child)); err != nil {
 				panic(err)
 			}
 		}()
@@ -94,10 +93,11 @@ func copyToTemp(child string) (string, error) {
 	defer reloader.CloseFile(r)
 
 	dst := filepath.Join(dir, basename)
-	if err := os.Mkdir(dir, 0751); err != nil {
+	w, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE, 0751)
+	if err != nil {
 		return "", err
 	}
-	w, err := os.OpenFile(dst, os.O_WRONLY, 0751)
+	defer reloader.CloseFile(w)
 	if _, err := io.Copy(w, r); err != nil {
 		return "", err
 	}
