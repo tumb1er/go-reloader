@@ -15,6 +15,7 @@ import (
 var (
 	kernel32                     = syscall.MustLoadDLL("kernel32.dll")
 	procGenerateConsoleCtrlEvent = kernel32.MustFindProc("GenerateConsoleCtrlEvent")
+	procAllocConsole             = kernel32.MustFindProc("AllocConsole")
 )
 
 // service is an implementation of svc.service interface for running reloader as Windows service.
@@ -28,6 +29,10 @@ func (s service) Start() error {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
+		ret, _, err := procAllocConsole.Call()
+		if ret == 0 {
+			panic(err)
+		}
 		if err := s.r.Run(); err != nil {
 			panic(err)
 		}
