@@ -82,10 +82,12 @@ func callTaskKill(cmd *exec.Cmd) error {
 }
 
 func (r *Reloader) terminateProcess() error {
+	r.logger.Print("attaching console...")
 	ret, _, err := procAttachConsole.Call(uintptr(r.child.Process.Pid))
 	if ret == 0 {
 		return err
 	}
+	r.logger.Print("sending ctrl+break...")
 	ret, _, err = procGenerateConsoleCtrlEvent.Call(syscall.CTRL_BREAK_EVENT, uintptr(r.child.Process.Pid))
 	if ret == 0 {
 		return err
