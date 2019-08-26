@@ -15,8 +15,6 @@ import (
 var (
 	kernel32                     = syscall.MustLoadDLL("kernel32.dll")
 	procGenerateConsoleCtrlEvent = kernel32.MustFindProc("GenerateConsoleCtrlEvent")
-	procAttachConsole            = kernel32.MustFindProc("AttachConsole")
-	procFreeConsole              = kernel32.MustFindProc("FreeConsole")
 )
 
 // service is an implementation of svc.service interface for running reloader as Windows service.
@@ -83,19 +81,7 @@ func callTaskKill(cmd *exec.Cmd) error {
 }
 
 func (r *Reloader) terminateProcess() error {
-	r.logger.Print("attaching console...")
-	ret, _, err := procAttachConsole.Call(uintptr(r.child.Process.Pid))
-	if ret == 0 {
-		return err
-	}
-	defer func() {
-		r.logger.Print("detaching console...")
-		if ret, _, err := procFreeConsole.Call(); ret == 0 {
-			r.logger.Fatalf("detach console: %e", err)
-		}
-	}()
-	r.logger.Print("sending ctrl+break...")
-	ret, _, err = procGenerateConsoleCtrlEvent.Call(syscall.CTRL_BREAK_EVENT, uintptr(r.child.Process.Pid))
+	ret, _, err := procGenerateConsoleCtrlEvent.Call(syscall.CTRL_BREAK_EVENT, uintptr(r.child.Process.Pid))
 	if ret == 0 {
 		return err
 	}
