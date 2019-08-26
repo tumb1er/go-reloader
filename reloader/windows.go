@@ -4,10 +4,10 @@ package reloader
 
 import (
 	"errors"
-	"fmt"
 	"github.com/judwhite/go-svc/svc"
 	"os"
 	"os/exec"
+	"strconv"
 	"sync"
 	"syscall"
 )
@@ -62,12 +62,25 @@ func SetExecutable(tmp *os.File) error {
 	return nil
 }
 
+func callTaskKill(cmd *exec.Cmd) error {
+	if err := cmd.Run(); err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			if ee.ExitCode() == 128 {
+				// process not found - called when reloader is terminated via Ctrl+C in console
+				return nil
+			}
+		}
+		return err
+	}
+	return nil
+}
+
 func (r *Reloader) terminateProcess() error {
-	cmd := exec.Command("taskkill", "/pid", fmt.Sprintf("%d", r.child.Process.Pid))
-	return cmd.Run()
+	cmd := exec.Command("taskkill", "/pid", strconv.Itoa(r.child.Process.Pid))
+	return callTaskKill(cmd)
 }
 
 func (r *Reloader) terminateProcessTree() error {
-	cmd := exec.Command("taskkill", "/t", "/pid", fmt.Sprintf("%d", r.child.Process.Pid))
-	return cmd.Run()
+	cmd := exec.Command("taskkill", "/t", "/pid", strconv.Itoa(r.child.Process.Pid))
+	return callTaskKill(cmd)
 }
