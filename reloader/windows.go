@@ -83,7 +83,7 @@ func callTaskKill(cmd *exec.Cmd) error {
 func (r *Reloader) terminateProcess() error {
 	ret, _, err := procGenerateConsoleCtrlEvent.Call(syscall.CTRL_BREAK_EVENT, uintptr(r.child.Process.Pid))
 	if ret == 0 {
-		panic(err)
+		return err
 	}
 	return nil
 }
