@@ -137,7 +137,7 @@ func (r *Reloader) StartChild() (*exec.Cmd, error) {
 		return nil, err
 	}
 	child := exec.Command(r.cmd.Path, r.args...)
-	child.SysProcAttr.CreationFlags |= syscall.CREATE_NEW_PROCESS_GROUP
+	child.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
 	child.Stdout = r.stdout
 	child.Stderr = r.stderr
 	if err := child.Start(); err != nil {
