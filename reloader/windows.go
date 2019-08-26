@@ -4,8 +4,10 @@ package reloader
 
 import (
 	"errors"
+	"fmt"
 	"github.com/judwhite/go-svc/svc"
 	"os"
+	"os/exec"
 	"sync"
 	"syscall"
 )
@@ -58,4 +60,14 @@ func (r *Reloader) Daemonize() error {
 //noinspection GoUnusedParameter
 func SetExecutable(tmp *os.File) error {
 	return nil
+}
+
+func (r *Reloader) terminateProcess() error {
+	cmd := exec.Command("taskkill", "/pid", fmt.Sprintf("%d", r.child.Process.Pid))
+	return cmd.Run()
+}
+
+func (r *Reloader) terminateProcessTree() error {
+	cmd := exec.Command("taskkill", "/t", "/pid", fmt.Sprintf("%d", r.child.Process.Pid))
+	return cmd.Run()
 }

@@ -28,6 +28,8 @@ $> reloader
   --staging /tmp/updates
   # copy child executable to temporary dir (usefull if executable is running under non-priviledged user)
   --tmp
+  # terminate child and it's process tree
+  --tree
   # child executable and it's args
   ./sleep arg
 ```

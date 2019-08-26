@@ -28,7 +28,9 @@ type Reloader struct {
 	staging string
 	// update check interval
 	interval time.Duration
-	logger   *log.Logger
+	// terminate process tree flag
+	tree   bool
+	logger *log.Logger
 	// mainloop running flag
 	running bool
 	stderr  io.Writer
@@ -103,7 +105,13 @@ func (r *Reloader) Run() error {
 
 // TerminateChild stops child process and waits for process exit
 func (r *Reloader) TerminateChild() error {
-	if err := r.child.Process.Kill(); err != nil {
+	var killer func() error
+	if !r.tree {
+		killer = r.terminateProcess
+	} else {
+		killer = r.terminateProcessTree
+	}
+	if err := killer(); err != nil {
 		return err
 	}
 	if _, err := r.child.Process.Wait(); err != nil {
@@ -147,6 +155,11 @@ func (r *Reloader) SetStaging(staging string) error {
 // SetInterval configures update check interval.
 func (r *Reloader) SetInterval(interval time.Duration) {
 	r.interval = interval
+}
+
+// SetTerminateTree configures terminate process tree flag.
+func (r *Reloader) SetTerminateTree(tree bool) {
+	r.tree = tree
 }
 
 // SetChild configures child cmd and arguments.

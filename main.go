@@ -69,6 +69,9 @@ func watch(c *cli.Context) error {
 			}
 		}()
 	}
+	if c.Bool("tree") {
+		r.SetTerminateTree(true)
+	}
 
 	if err := r.SetChild(child, args[1:]...); err != nil {
 		return err
@@ -149,6 +152,10 @@ func main() {
 		cli.BoolFlag{
 			Name:  "tmp",
 			Usage: "copy executable binary to temporary directory before start",
+		},
+		cli.BoolFlag{
+			Name:  "tree",
+			Usage: "terminate child process and it's process tree",
 		},
 	}
 	app.Action = watch
