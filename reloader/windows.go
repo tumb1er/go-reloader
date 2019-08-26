@@ -5,7 +5,6 @@ package reloader
 import (
 	"errors"
 	"github.com/judwhite/go-svc/svc"
-	"os"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -68,7 +67,7 @@ func (r *Reloader) Daemonize() error {
 // SetExecutable is a stub of settings executable bit for a file in tmp directory.
 // OS Windows does not need any file attributes to execute any file as exe.
 //noinspection GoUnusedParameter
-func SetExecutable(tmp *os.File) error {
+func SetExecutable(name string) error {
 	return nil
 }
 

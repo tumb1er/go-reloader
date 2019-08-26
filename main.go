@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/tumb1er/go-reloader/reloader"
 	"github.com/urfave/cli"
 	"io"
@@ -64,10 +63,11 @@ func watch(c *cli.Context) error {
 			return err
 		}
 		defer func() {
-			if err := os.Remove(child); err != nil {
+			if err := os.RemoveAll(filepath.Base(child)); err != nil {
 				panic(err)
 			}
 		}()
+
 	}
 	if c.Bool("tree") {
 		r.SetTerminateTree(true)
@@ -85,31 +85,23 @@ func watch(c *cli.Context) error {
 }
 
 func copyToTemp(child string) (string, error) {
-	parts := strings.SplitN(filepath.Base(child), ".", 2)
-	basename := parts[0]
-	if len(parts) > 1 {
-		basename = fmt.Sprintf("%s.*.%s", parts[0], parts[1])
-	} else {
-		basename = fmt.Sprintf("%s.*", parts[0])
-	}
-	tmp, err := ioutil.TempFile("", basename)
-	if err != nil {
-		return "", err
-	}
-	defer reloader.CloseFile(tmp)
+	basename := filepath.Base(child)
+	dir, err := ioutil.TempDir("", strings.Split(basename, ".")[0])
 	r, err := os.Open(child)
 	if err != nil {
 		return "", err
 	}
 	defer reloader.CloseFile(r)
-	if _, err := io.Copy(tmp, r); err != nil {
+
+	dst := filepath.Join(dir, basename)
+	w, err := os.OpenFile(dst, os.O_WRONLY, 0751)
+	if _, err := io.Copy(w, r); err != nil {
 		return "", err
 	}
-	if err := reloader.SetExecutable(tmp); err != nil {
+	if err := reloader.SetExecutable(dst); err != nil {
 		return "", err
 	}
-	child = tmp.Name()
-	return child, nil
+	return dst, nil
 }
 
 func main() {

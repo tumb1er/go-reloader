@@ -4,7 +4,6 @@ package reloader
 
 import (
 	"github.com/sevlyar/go-daemon"
-	"os"
 	"syscall"
 )
 
@@ -28,8 +27,8 @@ func (r *Reloader) Daemonize() error {
 }
 
 // SetExecutable sets executable bit for a file in tmp directory.
-func SetExecutable(tmp *os.File) error {
-	return tmp.Chmod(0751)
+func SetExecutable(name string) error {
+	return os.Chmod(name, 0751)
 }
 
 func (r *Reloader) terminateProcess() error {
