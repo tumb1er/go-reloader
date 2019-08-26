@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/tumb1er/go-reloader/reloader"
 	"github.com/urfave/cli"
-	"go-reloader/reloader"
 	"io"
 	"io/ioutil"
 	"log"
