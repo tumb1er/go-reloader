@@ -76,11 +76,11 @@ func callTaskKill(cmd *exec.Cmd) error {
 }
 
 func (r *Reloader) terminateProcess() error {
-	cmd := exec.Command("taskkill", "/pid", strconv.Itoa(r.child.Process.Pid))
+	cmd := exec.Command("taskkill", "/f", "/pid", strconv.Itoa(r.child.Process.Pid))
 	return callTaskKill(cmd)
 }
 
 func (r *Reloader) terminateProcessTree() error {
-	cmd := exec.Command("taskkill", "/t", "/pid", strconv.Itoa(r.child.Process.Pid))
+	cmd := exec.Command("taskkill", "/f", "/t", "/pid", strconv.Itoa(r.child.Process.Pid))
 	return callTaskKill(cmd)
 }
