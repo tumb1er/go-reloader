@@ -12,6 +12,11 @@ import (
 	"syscall"
 )
 
+var (
+	kernel32                     = syscall.MustLoadDLL("kernel32.dll")
+	procGenerateConsoleCtrlEvent = kernel32.MustFindProc("GenerateConsoleCtrlEvent")
+)
+
 // service is an implementation of svc.service interface for running reloader as Windows service.
 type service struct {
 	r  *Reloader
@@ -76,8 +81,11 @@ func callTaskKill(cmd *exec.Cmd) error {
 }
 
 func (r *Reloader) terminateProcess() error {
-	cmd := exec.Command("taskkill", "/f", "/pid", strconv.Itoa(r.child.Process.Pid))
-	return callTaskKill(cmd)
+	ret, _, err := procGenerateConsoleCtrlEvent.Call(syscall.CTRL_BREAK_EVENT, uintptr(r.child.Process.Pid))
+	if ret == 0 {
+		panic(err)
+	}
+	return nil
 }
 
 func (r *Reloader) terminateProcessTree() error {
