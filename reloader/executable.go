@@ -46,11 +46,7 @@ func (e Executable) GetChecksum() ([]byte, error) {
 func (e Executable) Latest(dir string) (bool, error) {
 	path := filepath.Join(dir, filepath.Base(e.Path))
 	if stage, err := NewExecutable(path); err != nil {
-		if _, ok := err.(*os.PathError); !ok {
-			return false, err
-		} else {
-			return true, nil
-		}
+		return false, err
 	} else {
 		if stage.Modified.Before(e.Modified) {
 			return true, nil
