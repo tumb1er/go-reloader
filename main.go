@@ -2,8 +2,8 @@ package main
 
 import (
 	"errors"
+	"github.com/tumb1er/go-reloader/reloader"
 	"github.com/urfave/cli"
-	"go-reloader/reloader"
 	"io"
 	"io/ioutil"
 	"log"
