@@ -2,8 +2,8 @@ package main
 
 import (
 	"errors"
-	"github.com/tumb1er/go-reloader/reloader"
 	"github.com/urfave/cli"
+	"go-reloader/reloader"
 	"io"
 	"io/ioutil"
 	"log"
@@ -66,10 +66,12 @@ func watch(c *cli.Context) error {
 				panic(err)
 			}
 		}()
-
 	}
 	if c.Bool("tree") {
 		r.SetTerminateTree(true)
+	}
+	if c.Bool("restart") {
+		r.SetRestart(true)
 	}
 
 	if err := r.SetChild(child, args[1:]...); err != nil {
@@ -151,6 +153,10 @@ func main() {
 		cli.BoolFlag{
 			Name:  "tree",
 			Usage: "terminate child process and it's process tree",
+		},
+		cli.BoolFlag{
+			Name:  "restart",
+			Usage: "restart child process after exit",
 		},
 	}
 	app.Action = watch

@@ -64,6 +64,22 @@ func (r *Reloader) Daemonize() error {
 	return svc.Run(s, syscall.SIGTERM, syscall.SIGINT)
 }
 
+// StartChild starts new child process.
+func (r *Reloader) StartChild() (*exec.Cmd, error) {
+	var err error
+	if r.cmd, err = NewExecutable(r.cmd.Path); err != nil {
+		return nil, err
+	}
+	child := exec.Command(r.cmd.Path, r.args...)
+	child.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
+	child.Stdout = r.stdout
+	child.Stderr = r.stderr
+	if err := child.Start(); err != nil {
+		return nil, err
+	}
+	return child, nil
+}
+
 // SetExecutable is a stub of settings executable bit for a file in tmp directory.
 // OS Windows does not need any file attributes to execute any file as exe.
 //noinspection GoUnusedParameter

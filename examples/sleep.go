@@ -1,4 +1,4 @@
-package examples
+package main
 
 // sleep is demo executable that periodically outputs some text to stderr.
 
