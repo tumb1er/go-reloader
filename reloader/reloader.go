@@ -30,10 +30,11 @@ type Reloader struct {
 	// terminate process tree flag
 	tree bool
 	// child auto restart flag
-	restart bool
-	logger  *log.Logger
-	stderr  io.Writer
-	stdout  io.Writer
+	restart      bool
+	logger       *log.Logger
+	stderr       io.Writer
+	stdout       io.Writer
+	stopReloader context.CancelFunc
 }
 
 // startChild starts new child process and returns a channel that is closed when
@@ -82,6 +83,7 @@ func (r *Reloader) Run() error {
 	}
 
 	reloaderContext, stopReloader := context.WithCancel(context.Background())
+	r.stopReloader = stopReloader
 
 	interrupted := make(chan os.Signal, 1)
 	signal.Notify(interrupted, os.Interrupt)

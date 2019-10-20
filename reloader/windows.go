@@ -41,12 +41,7 @@ func (s service) Start() error {
 
 // Stops marks reloader as not running and terminates reloader child process.
 func (s service) Stop() error {
-	s.r.running = false
-	if err := s.r.TerminateChild(); err != nil {
-		s.r.logger.Fatal(err)
-		return err
-	}
-	s.wg.Wait()
+	s.r.stopReloader()
 	return nil
 }
 
@@ -82,7 +77,7 @@ func (r *Reloader) StartChild() (*exec.Cmd, error) {
 
 // SetExecutable is a stub of settings executable bit for a file in tmp directory.
 // OS Windows does not need any file attributes to execute any file as exe.
-//noinspection GoUnusedParameter
+//noinspection GoUnusedParameter,GoUnusedExportedFunction
 func SetExecutable(name string) error {
 	return nil
 }
