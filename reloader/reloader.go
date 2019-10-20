@@ -110,6 +110,7 @@ func (r *Reloader) Run() error {
 			if running && updateAvailable {
 				r.logger.Print("switching binary")
 				if err := r.cmd.Switch(r.staging); err != nil {
+					r.logger.Fatalf("switch binary error: %s", err.Error())
 					return err
 				}
 			}
