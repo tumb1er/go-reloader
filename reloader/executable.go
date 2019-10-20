@@ -60,7 +60,18 @@ func (e Executable) Latest(dir string) (bool, error) {
 
 // Switch updates executable binary with new version from staging directory.
 func (e Executable) Switch(dir string) error {
-	if r, err := os.Open(filepath.Join(dir, filepath.Base(e.Path))); err != nil {
+	src := filepath.Join(dir, filepath.Base(e.Path))
+	err := os.Rename(src, e.Path)
+	if err == nil {
+		return nil
+	}
+	var size int64
+	if fileInfo, err := os.Stat(src); err != nil {
+		return err
+	} else {
+		size = fileInfo.Size()
+	}
+	if r, err := os.Open(src); err != nil {
 		return err
 	} else {
 		defer CloseFile(r)
@@ -68,7 +79,7 @@ func (e Executable) Switch(dir string) error {
 			return err
 		} else {
 			defer CloseFile(w)
-			if _, err := io.Copy(w, r); err != nil {
+			if _, err := io.CopyN(w, r, size); err != nil {
 				return err
 			}
 		}
