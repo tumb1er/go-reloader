@@ -96,7 +96,6 @@ func (r *Reloader) Run() error {
 	ticker := time.NewTicker(time.Second * 5)
 
 	running := true
-	updateAvailable := false
 	for {
 		select {
 		case <-reloaderContext.Done():
@@ -107,14 +106,20 @@ func (r *Reloader) Run() error {
 			running = false
 			stopChild()
 		case <-childExited:
-			if running && updateAvailable {
-				r.logger.Print("switching binary")
+			r.logger.Print("child exited, checking for updates")
+			var latest bool
+			if latest, err = r.cmd.Latest(r.staging); err != nil {
+				r.logger.Fatalf("child check error: %e", err)
+				return err
+			}
+			if !latest {
+				r.logger.Print("child updated, switching")
 				if err := r.cmd.Switch(r.staging); err != nil {
 					r.logger.Fatalf("switch binary error: %s", err.Error())
 					return err
 				}
 			}
-			if running && (r.restart || updateAvailable) {
+			if running && (r.restart || !latest) {
 				r.logger.Print("restarting child")
 				childExited, stopChild, err = r.startChild(reloaderContext)
 				if err != nil {
@@ -127,21 +132,10 @@ func (r *Reloader) Run() error {
 				stopReloader()
 			}
 		case <-ticker.C:
-			r.logger.Print("checking self")
-			if latest, err := r.self.Latest(r.staging); err != nil {
-				r.logger.Fatalf("self check error: %s", err.Error())
-			} else if !latest {
-				r.logger.Print("self updated, exiting")
-				running = false
-				stopChild()
-				continue
-			}
-
 			r.logger.Print("checking child")
 			if latest, err := r.cmd.Latest(r.staging); err != nil {
 				r.logger.Fatalf("child check error: %e", err)
 			} else {
-				updateAvailable = !latest
 				if !latest {
 					r.logger.Print("child updated, terminating")
 					stopChild()
