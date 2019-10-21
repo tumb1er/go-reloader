@@ -5,6 +5,7 @@ package reloader
 import (
 	"errors"
 	"github.com/judwhite/go-svc/svc"
+	"golang.org/x/sys/windows"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -98,6 +99,11 @@ func callTaskKill(cmd *exec.Cmd) error {
 func (r *Reloader) terminateProcess() error {
 	ret, _, err := procGenerateConsoleCtrlEvent.Call(syscall.CTRL_BREAK_EVENT, uintptr(r.child.Process.Pid))
 	if ret == 0 {
+		if errno, ok := err.(syscall.Errno); ok {
+			if errno == windows.ERROR_INVALID_PARAMETER {
+				return nil
+			}
+		}
 		return err
 	}
 	return nil
