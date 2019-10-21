@@ -71,7 +71,7 @@ func (e Executable) Switch(dir string) error {
 		return err
 	} else {
 		defer CloseFile(r)
-		if w, err := os.OpenFile(e.Path, os.O_WRONLY, 0751); err != nil {
+		if w, err := os.OpenFile(e.Path, os.O_WRONLY|os.O_TRUNC, 0751); err != nil {
 			return err
 		} else {
 			defer CloseFile(w)
