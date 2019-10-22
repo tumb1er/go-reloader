@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"time"
 )
@@ -22,6 +23,11 @@ type Executable struct {
 	args []string
 	// child process handler
 	cmd *exec.Cmd
+}
+
+// String returns an executable name
+func (e Executable) String() string {
+	return path.Base(e.path)
 }
 
 // GetModified retrieves file modification time from file system.
@@ -49,8 +55,8 @@ func (e Executable) GetChecksum() ([]byte, error) {
 
 // Latest checks whether Executable instance is running latest version of binary kept in staging directory.
 func (e Executable) Latest(dir string) (bool, error) {
-	path := filepath.Join(dir, filepath.Base(e.path))
-	if stage, err := NewExecutable(path); err != nil {
+	p := filepath.Join(dir, filepath.Base(e.path))
+	if stage, err := NewExecutable(p); err != nil {
 		return false, err
 	} else {
 		if stage.modified.Before(e.modified) {

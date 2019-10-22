@@ -106,7 +106,7 @@ func (r *Reloader) Run() error {
 			r.logger.Print("child exited")
 			updated := false
 			// check child and raise updated flag if child binary updated
-			if err := r.checkExecutable(r.cmd, "child", func() error {
+			if err := r.checkExecutableError(r.cmd, func() error {
 				if err := r.cmd.Switch(r.staging); err != nil {
 					r.logger.Fatalf("switch binary error: %s", err.Error())
 					return err
@@ -118,12 +118,9 @@ func (r *Reloader) Run() error {
 			}
 
 			// check self and lower running flag if self binary updated
-			if err := r.checkExecutable(r.self, "self", func() error {
+			r.checkExecutable(r.self, func() {
 				running = false
-				return nil
-			}); err != nil {
-				return err
-			}
+			})
 
 			if running && (r.restart || updated) {
 				if childExited, stopChild, err = r.startChild(reloaderContext); err != nil {
@@ -137,25 +134,16 @@ func (r *Reloader) Run() error {
 			}
 		case <-ticker.C:
 			// check child and stop it if updated
-			if err := r.checkExecutable(r.cmd, "child", func() error {
-				stopChild()
-				return nil
-			}); err != nil {
-				return err
-			}
+			r.checkExecutable(r.cmd, stopChild)
 			// check self and stop reloader if updated
-			if err := r.checkExecutable(r.self, "self", func() error {
-				stopReloader()
-				return nil
-			}); err != nil {
-				return err
-			}
+			r.checkExecutable(r.self, stopReloader)
 		}
 	}
 }
 
-// checkExecutable checks executable for update and runs callback if update is found
-func (r *Reloader) checkExecutable(cmd *executable.Executable, what string, onUpdate func() error) error {
+// checkExecutableError checks executable for update and runs callback if update is found
+func (r Reloader) checkExecutableError(cmd *executable.Executable, onUpdate func() error) error {
+	what := cmd.String()
 	r.logger.Printf("checking %s", what)
 	if latest, err := cmd.Latest(r.staging); err != nil {
 		r.logger.Fatalf("%s check error: %s", what, err.Error())
@@ -167,6 +155,16 @@ func (r *Reloader) checkExecutable(cmd *executable.Executable, what string, onUp
 		}
 	}
 	return nil
+}
+
+// checkExecutable is a helper for checkExecutableError that accepts function not returning error
+func (r Reloader) checkExecutable(cmd *executable.Executable, onUpdate func()) {
+	if err := r.checkExecutableError(cmd, func() error {
+		onUpdate()
+		return nil
+	}); err != nil {
+		panic(err)
+	}
 }
 
 // NewReloader returns a new Reloader instance with default configuration.
