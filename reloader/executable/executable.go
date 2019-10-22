@@ -69,29 +69,22 @@ func (e Executable) Latest(dir string) (bool, error) {
 	}
 }
 
-// Switch updates executable binary with new version from staging directory.
+// Switch overwrites executable for staging dir with exponential back-off
 func (e Executable) Switch(dir string) error {
 	src := filepath.Join(dir, filepath.Base(e.path))
-	var size int64
-	if fileInfo, err := os.Stat(src); err != nil {
-		return err
-	} else {
-		size = fileInfo.Size()
-	}
-	if r, err := os.Open(src); err != nil {
-		return err
-	} else {
-		defer CloseFile(r)
-		if w, err := os.OpenFile(e.path, os.O_WRONLY|os.O_TRUNC, 0751); err != nil {
-			return err
+	sleep := time.Second
+	total := 5
+	var err error
+	for total > 0 {
+		if err = PerformSwitch(src, e.path); err == nil {
+			return nil
 		} else {
-			defer CloseFile(w)
-			if _, err := io.CopyN(w, r, size); err != nil {
-				return err
-			}
+			time.Sleep(sleep)
+			sleep *= 2
+			total -= 1
 		}
 	}
-	return nil
+	return err
 }
 
 // Start initializes and starts new subprocess
