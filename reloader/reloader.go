@@ -74,7 +74,7 @@ func (r *Reloader) initSelf() error {
 }
 
 func (r *Reloader) Run() error {
-	r.logger.Print("Running...")
+	r.logger.Printf("Running %s...", r.version)
 	if err := r.initSelf(); err != nil {
 		return err
 	}
@@ -144,9 +144,10 @@ func (r *Reloader) Run() error {
 }
 
 // NewReloader returns a new Reloader instance with default configuration.
-func NewReloader() *Reloader {
+func NewReloader(version string) *Reloader {
 	return &Reloader{
 		Config: Config{
+			version:  version,
 			staging:  "staging",
 			interval: time.Minute,
 			logger:   log.New(os.Stderr, "", log.LstdFlags),

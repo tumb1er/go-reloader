@@ -8,6 +8,8 @@ import (
 )
 
 type Config struct {
+	// reloader version
+	version string
 	// path to staging directory
 	staging string
 	// update check interval

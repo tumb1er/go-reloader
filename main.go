@@ -14,10 +14,12 @@ import (
 	"time"
 )
 
+var Version = "1.1.1"
+
 func watch(c *cli.Context) error {
 	var err error
 	var child string
-	r := reloader.NewReloader()
+	r := reloader.NewReloader(c.App.Version)
 	if logfile := c.String("log"); logfile != "" {
 		if l, err := os.OpenFile(logfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644); err != nil {
 			return err
@@ -108,7 +110,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "reloader"
 	app.Usage = "reloads an executable after an update"
-	app.HideVersion = true
+	app.Version = Version
 	app.ArgsUsage = "<cmd> [<arg>...]"
 	app.UsageText = "reloader [options...] <cmd> [<arg>...]"
 	app.Flags = []cli.Flag{
