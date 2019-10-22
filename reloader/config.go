@@ -22,8 +22,6 @@ type Config struct {
 	child string
 	// child process args
 	args []string
-	// check self binary flag
-	selfCheck bool
 
 	stderr io.Writer
 	stdout io.Writer

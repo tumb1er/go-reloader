@@ -120,14 +120,12 @@ func (r *Reloader) Run() error {
 				return err
 			}
 
-			if r.selfCheck {
-				// check self and lower running flag if self binary updated
-				if err := r.checkExecutableError(r.self, func() error {
-					running = false
-					return r.startSelfUpdate()
-				}); err != nil {
-					return err
-				}
+			// check self and lower running flag if self binary updated
+			if err := r.checkExecutableError(r.self, func() error {
+				running = false
+				return r.startSelfUpdate()
+			}); err != nil {
+				return err
 			}
 
 			if running && (r.restart || updated) {
@@ -143,10 +141,8 @@ func (r *Reloader) Run() error {
 		case <-ticker.C:
 			// check child and stop it if updated
 			r.checkExecutable(r.cmd, stopChild)
-			if r.selfCheck {
-				// check self and stop reloader if updated
-				r.checkExecutable(r.self, stopChild)
-			}
+			// check self and stop reloader if updated
+			r.checkExecutable(r.self, stopChild)
 		}
 	}
 }
@@ -221,10 +217,6 @@ func (r *Reloader) Update(what string, restart bool) error {
 		return err
 	}
 	return nil
-}
-
-func (r *Reloader) SetSelfCheck(enabled bool) {
-	r.selfCheck = enabled
 }
 
 // NewReloader returns a new Reloader instance with default configuration.

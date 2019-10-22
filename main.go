@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var Version = "0.2.1"
+var Version = "0.2.0"
 
 func watch(c *cli.Context) error {
 	var err error
@@ -71,9 +71,6 @@ func watch(c *cli.Context) error {
 	}
 	if c.Bool("restart") {
 		r.SetRestart(true)
-	}
-	if c.Bool("self_check") {
-		r.SetSelfCheck(true)
 	}
 
 	r.SetChild(child, args[1:]...)
@@ -165,10 +162,6 @@ func main() {
 		cli.BoolFlag{
 			Name:  "tmp",
 			Usage: "copy executable binary to temporary directory before start",
-		},
-		cli.BoolFlag{
-			Name:  "self_check",
-			Usage: "check self binary for updates",
 		},
 		cli.BoolFlag{
 			Name:  "tree",
