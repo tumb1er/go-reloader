@@ -123,6 +123,10 @@ func (e Executable) Wait() (int, error) {
 	}
 }
 
+func (e Executable) Path() string {
+	return e.path
+}
+
 // NewExecutable initializes an instance representing executable file.
 func NewExecutable(path string, args ...string) (*Executable, error) {
 	var err error

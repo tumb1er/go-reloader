@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path"
 	"time"
 )
 
@@ -79,8 +80,8 @@ func (r *Reloader) Run() error {
 		return err
 	}
 
-	reloaderContext, stopReloader := context.WithCancel(context.Background())
-	r.stopReloader = stopReloader
+	var reloaderContext context.Context
+	reloaderContext, r.stopReloader = context.WithCancel(context.Background())
 
 	interrupted := make(chan os.Signal, 1)
 	signal.Notify(interrupted, os.Interrupt)
@@ -118,9 +119,9 @@ func (r *Reloader) Run() error {
 			}
 
 			// check self and lower running flag if self binary updated
-			r.checkExecutable(r.self, func() {
-				running = false
-			})
+			if err := r.checkExecutableError(r.self, r.startSelfUpdate); err != nil {
+				return err
+			}
 
 			if running && (r.restart || updated) {
 				if childExited, stopChild, err = r.startChild(reloaderContext); err != nil {
@@ -130,13 +131,13 @@ func (r *Reloader) Run() error {
 				r.logger.Print("terminating")
 				// prevent multiple reads from closed channel
 				childExited = make(chan int)
-				stopReloader()
+				r.stopReloader()
 			}
 		case <-ticker.C:
 			// check child and stop it if updated
 			r.checkExecutable(r.cmd, stopChild)
 			// check self and stop reloader if updated
-			r.checkExecutable(r.self, stopReloader)
+			r.checkExecutable(r.self, stopChild)
 		}
 	}
 }
@@ -165,6 +166,25 @@ func (r Reloader) checkExecutable(cmd *executable.Executable, onUpdate func()) {
 	}); err != nil {
 		panic(err)
 	}
+}
+
+// startSelfUpdate starts new process for switching binaries and stops reloader
+func (r Reloader) startSelfUpdate() error {
+	args := make([]string, 0, len(os.Args))
+	args = append(args, "--update", r.self.Path())
+	args = append(args, os.Args[1:]...)
+	var err error
+	var cmd *executable.Executable
+	updater := path.Join(r.staging, r.self.String())
+	r.logger.Printf("running %s %v", updater, args)
+	if cmd, err = executable.NewExecutable(updater, args...); err != nil {
+		return err
+	}
+	if err = cmd.Start(r.stdout, r.stderr); err != nil {
+		return err
+	}
+	r.stopReloader()
+	return nil
 }
 
 // NewReloader returns a new Reloader instance with default configuration.
