@@ -57,6 +57,34 @@ func (r *Reloader) Daemonize() error {
 	return svc.Run(s, syscall.SIGTERM, syscall.SIGINT)
 }
 
+func (r Reloader) RestartDaemon(name string) error {
+	r.logger.Printf("Restaring daemon %s", name)
+	cmd := exec.Command("sc", "stop", name)
+	cmd.Stdout = r.stdout
+	cmd.Stderr = r.stderr
+	if err := cmd.Start(); err != nil {
+		r.logger.Fatalf("service stop error: %s", err.Error())
+		return err
+	}
+	if err := cmd.Wait(); err != nil {
+		r.logger.Fatalf("service stop failed: %s", err.Error())
+		return err
+	}
+
+	cmd = exec.Command("sc", "start", "icm_client")
+	cmd.Stdout = r.stdout
+	cmd.Stderr = r.stderr
+	if err := cmd.Start(); err != nil {
+		r.logger.Fatalf("service start error: %s", err.Error())
+		return err
+	}
+	if err := cmd.Wait(); err != nil {
+		r.logger.Fatalf("service start failed: %s", err.Error())
+		return err
+	}
+	return nil
+}
+
 // SetExecutable is a stub of settings executable bit for a file in tmp directory.
 // OS Windows does not need any file attributes to execute any file as exe.
 //noinspection GoUnusedParameter,GoUnusedExportedFunction

@@ -75,13 +75,21 @@ func watch(c *cli.Context) error {
 
 	r.SetChild(child, args[1:]...)
 
-	if !c.Bool("daemonize") {
-		if c.Bool("update") {
-			return r.Update()
+	service := c.String("service")
+	update := c.String("update")
+	if service == "" {
+		if update != "" {
+			return r.Update(update, true)
 		} else {
 			return r.Run()
 		}
 	} else {
+		if update != "" {
+			if err := r.Update(update, false); err != nil {
+				return err
+			}
+			return r.RestartDaemon(service)
+		}
 		return r.Daemonize()
 	}
 }
@@ -118,9 +126,9 @@ func main() {
 	app.ArgsUsage = "<cmd> [<arg>...]"
 	app.UsageText = "reloader [options...] <cmd> [<arg>...]"
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{
+		cli.StringFlag{
 			Name:  "update",
-			Usage: "perform self-update and exit",
+			Usage: "perform update of executable and exit",
 		},
 		cli.DurationFlag{
 			Name:  "interval",
