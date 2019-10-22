@@ -91,7 +91,7 @@ func (r *Reloader) Run() error {
 		r.logger.Fatalf("child start error")
 	}
 
-	ticker := time.NewTicker(time.Second * 5)
+	ticker := time.NewTicker(r.interval)
 
 	running := true
 	for {
