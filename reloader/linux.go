@@ -29,9 +29,6 @@ func (r *Reloader) Daemonize() error {
 
 func (r Reloader) RestartDaemon(name string) error {
 	r.logger.Printf("Restaring daemon %s", name)
-	w, _ := os.OpenFile("/tmp/restart.txt", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	r.logger.SetOutput(w)
-	r.logger.Printf("Restarting service %s", name)
 	cmd := exec.Command("service", name, "restart")
 	cmd.Stdout = r.stdout
 	cmd.Stderr = r.stderr

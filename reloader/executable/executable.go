@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -98,7 +97,6 @@ func (e Executable) Switch(dir string) error {
 // Start initializes and starts new subprocess
 func (e *Executable) Start(stdout io.Writer, stderr io.Writer) error {
 	e.cmd = exec.Command(e.path, e.args...)
-	log.Printf("exec %s %v", e.path, e.args)
 	e.cmd.Stdout = stdout
 	e.cmd.Stderr = stderr
 	e.setCmdFlags()
