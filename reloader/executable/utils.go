@@ -1,4 +1,4 @@
-package reloader
+package executable
 
 import "io"
 

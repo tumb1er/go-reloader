@@ -2,9 +2,9 @@ package reloader
 
 import (
 	"context"
+	"github.com/tumb1er/go-reloader/reloader/executable"
 	"log"
 	"os"
-	"os/exec"
 	"os/signal"
 	"time"
 )
@@ -13,11 +13,9 @@ import (
 type Reloader struct {
 	Config
 	// link to reloader binary itself
-	self *Executable
+	self *executable.Executable
 	// link to child executable binary
-	cmd *Executable
-	// child process handler
-	child        *exec.Cmd
+	cmd          *executable.Executable
 	stopReloader context.CancelFunc
 }
 
@@ -27,9 +25,14 @@ func (r *Reloader) startChild(ctx context.Context) (<-chan int, context.CancelFu
 	childContext, stopChild := context.WithCancel(ctx)
 	var err error
 	r.logger.Print("starting child")
-	// starting child process
-	if r.child, err = r.StartChild(); err != nil {
-		r.logger.Fatalf("exec child failed: %s", err.Error())
+	// initializing child process
+	if r.cmd, err = executable.NewExecutable(r.child, r.args...); err != nil {
+		r.logger.Fatalf("child init failed %s", err.Error())
+		return nil, nil, err
+	}
+
+	if err := r.cmd.Start(r.stdout, r.stderr); err != nil {
+		r.logger.Fatalf("child start failed: %s", err.Error())
 		return nil, nil, err
 	}
 	r.logger.Print("child started")
@@ -39,10 +42,10 @@ func (r *Reloader) startChild(ctx context.Context) (<-chan int, context.CancelFu
 	go func() {
 		defer close(ch)
 		r.logger.Print("waiting for child exit")
-		if _, err := r.child.Process.Wait(); err != nil {
+		if exitCode, err := r.cmd.Wait(); err != nil {
 			r.logger.Fatalf("terminate wait: %e", err)
 		} else {
-			r.logger.Print("child exited")
+			r.logger.Printf("child exited with exit code %d", exitCode)
 		}
 	}()
 
@@ -50,7 +53,7 @@ func (r *Reloader) startChild(ctx context.Context) (<-chan int, context.CancelFu
 	go func() {
 		<-childContext.Done()
 		r.logger.Print("terminating child")
-		if err := r.TerminateChild(); err != nil {
+		if err := r.cmd.Terminate(r.tree); err != nil {
 			r.logger.Fatalf("terminate child: %s", err.Error())
 		}
 	}()
@@ -64,10 +67,8 @@ func (r *Reloader) initSelf() error {
 	if self, err = os.Executable(); err != nil {
 		return err
 	}
-	if executable, err := NewExecutable(self); err != nil {
+	if r.self, err = executable.NewExecutable(self); err != nil {
 		return err
-	} else {
-		r.self = executable
 	}
 	return nil
 }
@@ -105,7 +106,7 @@ func (r *Reloader) Run() error {
 			r.logger.Print("child exited, checking for updates")
 			var latest bool
 			if latest, err = r.cmd.Latest(r.staging); err != nil {
-				r.logger.Fatalf("child check error: %e", err)
+				r.logger.Fatalf("child check error: %s", err.Error())
 				return err
 			}
 			if !latest {
@@ -140,21 +141,6 @@ func (r *Reloader) Run() error {
 		}
 
 	}
-}
-
-// TerminateChild stops child process and waits for process exit
-func (r *Reloader) TerminateChild() error {
-	var killer func() error
-	if !r.tree {
-		killer = r.terminateProcess
-	} else {
-		killer = r.terminateProcessTree
-	}
-	if err := killer(); err != nil {
-		r.logger.Printf("terminate process: %e", err)
-		return err
-	}
-	return nil
 }
 
 // NewReloader returns a new Reloader instance with default configuration.

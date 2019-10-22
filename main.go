@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/tumb1er/go-reloader/reloader"
+	"github.com/tumb1er/go-reloader/reloader/executable"
 	"github.com/urfave/cli"
 	"io"
 	"io/ioutil"
@@ -21,7 +22,7 @@ func watch(c *cli.Context) error {
 		if l, err := os.OpenFile(logfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644); err != nil {
 			return err
 		} else {
-			defer reloader.CloseFile(l)
+			defer executable.CloseFile(l)
 			r.SetLogger(log.New(l, "", log.LstdFlags))
 		}
 	}
@@ -29,7 +30,7 @@ func watch(c *cli.Context) error {
 		if w, err := os.OpenFile(stdout, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644); err != nil {
 			return err
 		} else {
-			defer reloader.CloseFile(w)
+			defer executable.CloseFile(w)
 			r.SetStdout(w)
 		}
 	}
@@ -37,7 +38,7 @@ func watch(c *cli.Context) error {
 		if w, err := os.OpenFile(stderr, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644); err != nil {
 			return err
 		} else {
-			defer reloader.CloseFile(w)
+			defer executable.CloseFile(w)
 			r.SetStderr(w)
 		}
 	}
@@ -86,14 +87,14 @@ func copyToTemp(child string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer reloader.CloseFile(r)
+	defer executable.CloseFile(r)
 
 	dst := filepath.Join(dir, basename)
 	w, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE, 0751)
 	if err != nil {
 		return "", err
 	}
-	defer reloader.CloseFile(w)
+	defer executable.CloseFile(w)
 	if _, err := io.Copy(w, r); err != nil {
 		return "", err
 	}

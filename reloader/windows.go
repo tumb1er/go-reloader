@@ -5,9 +5,6 @@ package reloader
 import (
 	"errors"
 	"github.com/judwhite/go-svc/svc"
-	"golang.org/x/sys/windows"
-	"os/exec"
-	"strconv"
 	"sync"
 	"syscall"
 )
@@ -60,56 +57,9 @@ func (r *Reloader) Daemonize() error {
 	return svc.Run(s, syscall.SIGTERM, syscall.SIGINT)
 }
 
-// StartChild starts new child process.
-func (r *Reloader) StartChild() (*exec.Cmd, error) {
-	var err error
-	if r.cmd, err = NewExecutable(r.cmd.Path); err != nil {
-		return nil, err
-	}
-	child := exec.Command(r.cmd.Path, r.args...)
-	child.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
-	child.Stdout = r.stdout
-	child.Stderr = r.stderr
-	if err := child.Start(); err != nil {
-		return nil, err
-	}
-	return child, nil
-}
-
 // SetExecutable is a stub of settings executable bit for a file in tmp directory.
 // OS Windows does not need any file attributes to execute any file as exe.
 //noinspection GoUnusedParameter,GoUnusedExportedFunction
 func SetExecutable(name string) error {
 	return nil
-}
-
-func callTaskKill(cmd *exec.Cmd) error {
-	if err := cmd.Run(); err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			if ee.ExitCode() == 128 {
-				// process not found - called when reloader is terminated via Ctrl+C in console
-				return nil
-			}
-		}
-		return err
-	}
-	return nil
-}
-
-func (r *Reloader) terminateProcess() error {
-	ret, _, err := procGenerateConsoleCtrlEvent.Call(syscall.CTRL_BREAK_EVENT, uintptr(r.child.Process.Pid))
-	if ret == 0 {
-		if errno, ok := err.(syscall.Errno); ok {
-			if errno == windows.ERROR_INVALID_PARAMETER {
-				return nil
-			}
-		}
-		return err
-	}
-	return nil
-}
-
-func (r *Reloader) terminateProcessTree() error {
-	cmd := exec.Command("taskkill", "/f", "/t", "/pid", strconv.Itoa(r.child.Process.Pid))
-	return callTaskKill(cmd)
 }
