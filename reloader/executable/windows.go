@@ -3,14 +3,20 @@
 package executable
 
 import (
+	"golang.org/x/sys/windows"
 	"os/exec"
 	"strconv"
 	"syscall"
 )
 
+var (
+	kernel32                     = syscall.MustLoadDLL("kernel32.dll")
+	procGenerateConsoleCtrlEvent = kernel32.MustFindProc("GenerateConsoleCtrlEvent")
+)
+
 // setCmdFlags sets new process group flag
 func (e *Executable) setCmdFlags() {
-	child.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
+	e.cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
 }
 
 // terminateProcess sends CTRL_BREAK to child process
@@ -39,4 +45,5 @@ func (e *Executable) terminateProcessTree() error {
 		}
 		return err
 	}
+	return nil
 }

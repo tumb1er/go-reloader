@@ -5,14 +5,14 @@ package reloader
 import (
 	"errors"
 	"github.com/judwhite/go-svc/svc"
+	"os/exec"
 	"sync"
 	"syscall"
 )
 
 var (
-	kernel32                     = syscall.MustLoadDLL("kernel32.dll")
-	procGenerateConsoleCtrlEvent = kernel32.MustFindProc("GenerateConsoleCtrlEvent")
-	procAllocConsole             = kernel32.MustFindProc("AllocConsole")
+	kernel32         = syscall.MustLoadDLL("kernel32.dll")
+	procAllocConsole = kernel32.MustFindProc("AllocConsole")
 )
 
 // service is an implementation of svc.service interface for running reloader as Windows service.
