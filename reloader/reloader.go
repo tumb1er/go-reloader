@@ -96,51 +96,77 @@ func (r *Reloader) Run() error {
 	for {
 		select {
 		case <-reloaderContext.Done():
-			r.logger.Print("reloader context done")
+			r.logger.Print("exit")
 			return nil
 		case <-interrupted:
 			r.logger.Print("received interrupt signal")
 			running = false
 			stopChild()
 		case <-childExited:
-			r.logger.Print("child exited, checking for updates")
-			var latest bool
-			if latest, err = r.cmd.Latest(r.staging); err != nil {
-				r.logger.Fatalf("child check error: %s", err.Error())
-				return err
-			}
-			if !latest {
-				r.logger.Print("child updated, switching")
+			r.logger.Print("child exited")
+			updated := false
+			// check child and raise updated flag if child binary updated
+			if err := r.checkExecutable(r.cmd, "child", func() error {
 				if err := r.cmd.Switch(r.staging); err != nil {
 					r.logger.Fatalf("switch binary error: %s", err.Error())
 					return err
 				}
+				updated = true
+				return nil
+			}); err != nil {
+				return err
 			}
-			if running && (r.restart || !latest) {
-				r.logger.Print("restarting child")
-				childExited, stopChild, err = r.startChild(reloaderContext)
-				if err != nil {
-					r.logger.Fatalf("child start error")
+
+			// check self and lower running flag if self binary updated
+			if err := r.checkExecutable(r.self, "self", func() error {
+				running = false
+				return nil
+			}); err != nil {
+				return err
+			}
+
+			if running && (r.restart || updated) {
+				if childExited, stopChild, err = r.startChild(reloaderContext); err != nil {
+					return err
 				}
 			} else {
-				r.logger.Print("child exited, terminating")
+				r.logger.Print("terminating")
 				// prevent multiple reads from closed channel
 				childExited = make(chan int)
 				stopReloader()
 			}
 		case <-ticker.C:
-			r.logger.Print("checking child")
-			if latest, err := r.cmd.Latest(r.staging); err != nil {
-				r.logger.Fatalf("child check error: %e", err)
-			} else {
-				if !latest {
-					r.logger.Print("child updated, terminating")
-					stopChild()
-				}
+			// check child and stop it if updated
+			if err := r.checkExecutable(r.cmd, "child", func() error {
+				stopChild()
+				return nil
+			}); err != nil {
+				return err
+			}
+			// check self and stop reloader if updated
+			if err := r.checkExecutable(r.self, "self", func() error {
+				stopReloader()
+				return nil
+			}); err != nil {
+				return err
 			}
 		}
-
 	}
+}
+
+// checkExecutable checks executable for update and runs callback if update is found
+func (r *Reloader) checkExecutable(cmd *executable.Executable, what string, onUpdate func() error) error {
+	r.logger.Printf("checking %s", what)
+	if latest, err := cmd.Latest(r.staging); err != nil {
+		r.logger.Fatalf("%s check error: %s", what, err.Error())
+		return err
+	} else {
+		if !latest {
+			r.logger.Printf("%s updated", what)
+			return onUpdate()
+		}
+	}
+	return nil
 }
 
 // NewReloader returns a new Reloader instance with default configuration.
