@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"time"
 )
@@ -27,7 +26,7 @@ type Executable struct {
 
 // String returns an executable name
 func (e Executable) String() string {
-	return path.Base(e.path)
+	return filepath.Base(e.path)
 }
 
 // GetModified retrieves file modification time from file system.
@@ -94,6 +93,10 @@ func (e *Executable) Start(stdout io.Writer, stderr io.Writer) error {
 	e.cmd.Stderr = stderr
 	e.setCmdFlags()
 	return e.cmd.Start()
+}
+
+func (e *Executable) Release() error {
+	return e.cmd.Process.Release()
 }
 
 // Terminate stops child process and waits for process exit

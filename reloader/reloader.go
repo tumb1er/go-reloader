@@ -2,11 +2,12 @@ package reloader
 
 import (
 	"context"
+	"errors"
 	"github.com/tumb1er/go-reloader/reloader/executable"
 	"log"
 	"os"
 	"os/signal"
-	"path"
+	"path/filepath"
 	"time"
 )
 
@@ -120,7 +121,10 @@ func (r *Reloader) Run() error {
 			}
 
 			// check self and lower running flag if self binary updated
-			if err := r.checkExecutableError(r.self, r.startSelfUpdate); err != nil {
+			if err := r.checkExecutableError(r.self, func() error {
+				running = false
+				return r.startSelfUpdate()
+			}); err != nil {
 				return err
 			}
 
@@ -176,7 +180,7 @@ func (r Reloader) startSelfUpdate() error {
 	args = append(args, os.Args[1:]...)
 	var err error
 	var cmd *executable.Executable
-	updater := path.Join(r.staging, r.self.String())
+	updater := filepath.Join(r.staging, r.self.String())
 	r.logger.Printf("running %s %v", updater, args)
 	if cmd, err = executable.NewExecutable(updater, args...); err != nil {
 		return err
@@ -184,8 +188,11 @@ func (r Reloader) startSelfUpdate() error {
 	if err = cmd.Start(r.stdout, r.stderr); err != nil {
 		return err
 	}
+	if err = cmd.Release(); err != nil {
+		return err
+	}
 	r.stopReloader()
-	return nil
+	return errors.New("reloader updated")
 }
 
 func (r *Reloader) Update(what string, restart bool) error {

@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var Version = "0.1.1"
+var Version = "0.2.0"
 
 func watch(c *cli.Context) error {
 	var err error

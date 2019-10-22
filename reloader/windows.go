@@ -59,7 +59,7 @@ func (r *Reloader) Daemonize() error {
 }
 
 func (r Reloader) RestartDaemon(name string) error {
-	r.logger.Printf("Restaring daemon %s", name)
+	r.logger.Printf("Stopping daemon %s", name)
 	cmd := exec.Command("sc", "stop", name)
 	cmd.Stdout = r.stdout
 	cmd.Stderr = r.stderr
@@ -69,13 +69,14 @@ func (r Reloader) RestartDaemon(name string) error {
 	}
 	if err := cmd.Wait(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
-			if exitError.ExitCode() == int(windows.ERROR_SERVICE_NOT_ACTIVE) {
-				// skip Service not started error
-				return nil
+			if syscall.Errno(exitError.ExitCode()) != windows.ERROR_SERVICE_NOT_ACTIVE {
+				// return err only if not Service not started error
+				return err
 			}
+		} else {
+			r.logger.Fatalf("service stop failed: %s", err.Error())
+			return err
 		}
-		r.logger.Fatalf("service stop failed: %s", err.Error())
-		return err
 	}
 
 	cmd = exec.Command("sc", "start", "icm_client")
