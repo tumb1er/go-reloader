@@ -76,7 +76,11 @@ func watch(c *cli.Context) error {
 	r.SetChild(child, args[1:]...)
 
 	if !c.Bool("daemonize") {
-		return r.Run()
+		if c.Bool("update") {
+			return r.Update()
+		} else {
+			return r.Run()
+		}
 	} else {
 		return r.Daemonize()
 	}
@@ -114,6 +118,10 @@ func main() {
 	app.ArgsUsage = "<cmd> [<arg>...]"
 	app.UsageText = "reloader [options...] <cmd> [<arg>...]"
 	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "update",
+			Usage: "perform self-update and exit",
+		},
 		cli.DurationFlag{
 			Name:  "interval",
 			Value: time.Minute,

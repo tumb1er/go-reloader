@@ -187,6 +187,24 @@ func (r Reloader) startSelfUpdate() error {
 	return nil
 }
 
+func (r *Reloader) Update() error {
+	r.logger.Printf("Updating %s...", r.version)
+	var err error
+	if r.cmd, err = executable.NewExecutable(r.child, r.args...); err != nil {
+		r.logger.Fatalf("self init failed %s", err.Error())
+		return err
+	}
+	if err = r.cmd.Switch(r.staging); err != nil {
+		r.logger.Fatalf("self switch failed: %s", err.Error())
+		return err
+	}
+	if err = r.cmd.Start(r.stdout, r.stderr); err != nil {
+		r.logger.Fatalf("self restart failed: %s", err.Error())
+		return err
+	}
+	return nil
+}
+
 // NewReloader returns a new Reloader instance with default configuration.
 func NewReloader(version string) *Reloader {
 	return &Reloader{
