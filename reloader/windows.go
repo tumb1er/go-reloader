@@ -5,6 +5,7 @@ package reloader
 import (
 	"errors"
 	"github.com/judwhite/go-svc/svc"
+	"golang.org/x/sys/windows"
 	"os/exec"
 	"sync"
 	"syscall"
@@ -67,6 +68,12 @@ func (r Reloader) RestartDaemon(name string) error {
 		return err
 	}
 	if err := cmd.Wait(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			if exitError.ExitCode() == int(windows.ERROR_SERVICE_NOT_ACTIVE) {
+				// skip Service not started error
+				return nil
+			}
+		}
 		r.logger.Fatalf("service stop failed: %s", err.Error())
 		return err
 	}
