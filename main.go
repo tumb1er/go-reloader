@@ -15,12 +15,8 @@ import (
 
 func watch(c *cli.Context) error {
 	var err error
-	var self, child string
-	if self, err = os.Executable(); err != nil {
-		return err
-	}
-
-	r := reloader.NewReloader(self)
+	var child string
+	r := reloader.NewReloader()
 	if logfile := c.String("log"); logfile != "" {
 		if l, err := os.OpenFile(logfile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644); err != nil {
 			return err
@@ -74,9 +70,7 @@ func watch(c *cli.Context) error {
 		r.SetRestart(true)
 	}
 
-	if err := r.SetChild(child, args[1:]...); err != nil {
-		return err
-	}
+	r.SetChild(child, args[1:]...)
 
 	if !c.Bool("daemonize") {
 		return r.Run()
@@ -127,9 +121,9 @@ func main() {
 			Value: "staging",
 			Usage: "staging directory path",
 		},
-		cli.BoolFlag{
-			Name:  "daemonize",
-			Usage: "start as daemon/service",
+		cli.StringFlag{
+			Name:  "service",
+			Usage: "daemon/service name",
 		},
 		cli.StringFlag{
 			Name:  "log",

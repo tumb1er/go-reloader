@@ -2,38 +2,22 @@ package reloader
 
 import (
 	"context"
-	"io"
 	"log"
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
 	"time"
 )
 
 // Reloader watches, updates and restarts an executable.
 type Reloader struct {
+	Config
 	// link to reloader binary itself
 	self *Executable
 	// link to child executable binary
 	cmd *Executable
-	// path to reloader binary
-	executable string
 	// child process handler
-	child *exec.Cmd
-	// child process args
-	args []string
-	// path to staging directory
-	staging string
-	// update check interval
-	interval time.Duration
-	// terminate process tree flag
-	tree bool
-	// child auto restart flag
-	restart      bool
-	logger       *log.Logger
-	stderr       io.Writer
-	stdout       io.Writer
+	child        *exec.Cmd
 	stopReloader context.CancelFunc
 }
 
@@ -74,12 +58,24 @@ func (r *Reloader) startChild(ctx context.Context) (<-chan int, context.CancelFu
 	return ch, stopChild, nil
 }
 
-func (r *Reloader) Run() error {
-	r.logger.Print("Running...")
-	if executable, err := NewExecutable(r.executable); err != nil {
+func (r *Reloader) initSelf() error {
+	var self string
+	var err error
+	if self, err = os.Executable(); err != nil {
+		return err
+	}
+	if executable, err := NewExecutable(self); err != nil {
 		return err
 	} else {
 		r.self = executable
+	}
+	return nil
+}
+
+func (r *Reloader) Run() error {
+	r.logger.Print("Running...")
+	if err := r.initSelf(); err != nil {
+		return err
 	}
 
 	reloaderContext, stopReloader := context.WithCancel(context.Background())
@@ -161,62 +157,15 @@ func (r *Reloader) TerminateChild() error {
 	return nil
 }
 
-// SetStaging configures updates directory path.
-func (r *Reloader) SetStaging(staging string) error {
-	var err error
-	if r.staging, err = filepath.Abs(staging); err != nil {
-		return err
-	}
-	return nil
-}
-
-// SetInterval configures update check interval.
-func (r *Reloader) SetInterval(interval time.Duration) {
-	r.interval = interval
-}
-
-// SetTerminateTree configures terminate process tree flag.
-func (r *Reloader) SetTerminateTree(tree bool) {
-	r.tree = tree
-}
-
-// SetChild configures child cmd and arguments.
-func (r *Reloader) SetChild(child string, args ...string) error {
-	var err error
-	if r.cmd, err = NewExecutable(child); err != nil {
-		return err
-	}
-	r.args = args
-	return nil
-}
-
-// SetLogger configures reloader logger.
-func (r *Reloader) SetLogger(logger *log.Logger) {
-	r.logger = logger
-}
-
-// SetStdout configures child process stdout redirection.
-func (r *Reloader) SetStdout(s io.Writer) {
-	r.stdout = s
-}
-
-// SetStderr configures child process stderr redirection.
-func (r *Reloader) SetStderr(s io.Writer) {
-	r.stderr = s
-}
-
-func (r *Reloader) SetRestart(restart bool) {
-	r.restart = restart
-}
-
 // NewReloader returns a new Reloader instance with default configuration.
-func NewReloader(executable string) *Reloader {
+func NewReloader() *Reloader {
 	return &Reloader{
-		executable: executable,
-		staging:    "staging",
-		interval:   time.Minute,
-		logger:     log.New(os.Stderr, "", log.LstdFlags),
-		stdout:     os.Stdout,
-		stderr:     os.Stderr,
+		Config: Config{
+			staging:  "staging",
+			interval: time.Minute,
+			logger:   log.New(os.Stderr, "", log.LstdFlags),
+			stdout:   os.Stdout,
+			stderr:   os.Stderr,
+		},
 	}
 }
