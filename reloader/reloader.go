@@ -108,6 +108,7 @@ func (r *Reloader) Run() error {
 			updated := false
 			// check child and raise updated flag if child binary updated
 			if err := r.checkExecutableError(r.cmd, func() error {
+				r.logger.Printf("switching %s", r.cmd.String())
 				if err := r.cmd.Switch(r.staging); err != nil {
 					r.logger.Fatalf("switch binary error: %s", err.Error())
 					return err
