@@ -126,48 +126,48 @@ func main() {
 	app.ArgsUsage = "<cmd> [<arg>...]"
 	app.UsageText = "reloader [options...] <cmd> [<arg>...]"
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "update",
 			Usage: "perform update of executable and exit",
 		},
-		cli.DurationFlag{
+		&cli.DurationFlag{
 			Name:  "interval",
 			Value: time.Minute,
 			Usage: "update check interval",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "staging",
 			Value: "staging",
 			Usage: "staging directory path",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "service",
 			Usage: "daemon/service name",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "log",
 			Value: "",
 			Usage: "reloader log file",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "stdout",
 			Value: "",
 			Usage: "child process stdout file",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "stderr",
 			Value: "",
 			Usage: "child process stderr file",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "tmp",
 			Usage: "copy executable binary to temporary directory before start",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "tree",
 			Usage: "terminate child process and it's process tree",
 		},
-		cli.BoolFlag{
+		&cli.BoolFlag{
 			Name:  "restart",
 			Usage: "restart child process after exit",
 		},
